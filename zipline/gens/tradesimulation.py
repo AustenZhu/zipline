@@ -46,6 +46,7 @@ class AlgorithmSimulator(object):
         # Param Setup
         # ==============
         self.sim_params = sim_params
+        self.fast_backtest = sim_params.fast_backtest
         self.env = algo.trading_environment
         self.data_portal = data_portal
         self.restrictions = restrictions
@@ -231,9 +232,12 @@ class AlgorithmSimulator(object):
 
                     yield minute_msg
 
-            risk_message = metrics_tracker.handle_simulation_end(
-                self.data_portal,
-            )
+            if not self.fast_backtest:
+                risk_message = metrics_tracker.handle_simulation_end(
+                    self.data_portal,
+                )
+            else:
+                risk_message = None
             yield risk_message
 
     def _cleanup_expired_assets(self, dt, position_assets):
@@ -285,23 +289,25 @@ class AlgorithmSimulator(object):
         """
         Get a perf message for the given datetime.
         """
-        perf_message = metrics_tracker.handle_market_close(
-            dt,
-            self.data_portal,
-        )
-        perf_message['daily_perf']['recorded_vars'] = algo.recorded_vars
-        return perf_message
+        if not self.fast_backtest:
+            perf_message = metrics_tracker.handle_market_close(
+                dt,
+                self.data_portal,
+            )
+            perf_message['daily_perf']['recorded_vars'] = algo.recorded_vars
+            return perf_message
 
     def _get_minute_message(self, dt, algo, metrics_tracker):
         """
         Get a perf message for the given datetime.
         """
-        rvars = algo.recorded_vars
+        if not self.fast_backtest:
+            rvars = algo.recorded_vars
 
-        minute_message = metrics_tracker.handle_minute_close(
-            dt,
-            self.data_portal,
-        )
+            minute_message = metrics_tracker.handle_minute_close(
+                dt,
+                self.data_portal,
+            )
 
-        minute_message['minute_perf']['recorded_vars'] = rvars
-        return minute_message
+            minute_message['minute_perf']['recorded_vars'] = rvars
+            return minute_message
