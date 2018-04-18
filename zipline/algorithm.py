@@ -142,7 +142,7 @@ from zipline.zipline_warnings import ZiplineDeprecationWarning
 
 log = logbook.Logger("ZiplineLog")
 
-DEFAULT_FAST_BACKTEST = True
+DEFAULT_FAST_BACKTEST = False
 
 class TradingAlgorithm(object):
     """A class that represents a trading strategy and parameters to execute
