@@ -142,6 +142,7 @@ from zipline.zipline_warnings import ZiplineDeprecationWarning
 
 log = logbook.Logger("ZiplineLog")
 
+DEFAULT_FAST_BACKTEST = True
 
 class TradingAlgorithm(object):
     """A class that represents a trading strategy and parameters to execute
@@ -253,6 +254,8 @@ class TradingAlgorithm(object):
                 Any asset identifiers that are not provided in the
                 equities_metadata, but will be traded by this TradingAlgorithm
         """
+        self.fast_backtest = DEFAULT_FAST_BACKTEST
+
         self.sources = []
 
         # List of trading controls to be used to validate orders.
@@ -303,6 +306,7 @@ class TradingAlgorithm(object):
                 end=kwargs.pop('end', None),
                 trading_calendar=self.trading_calendar,
             )
+        self.sim_params.fast_backtest = self.fast_backtest
 
         self.metrics_tracker = None
         self._last_sync_time = pd.NaT
@@ -733,7 +737,8 @@ class TradingAlgorithm(object):
             # convert perf dict to pandas dataframe
             daily_stats = self._create_daily_stats(perfs)
 
-            self.analyze(daily_stats)
+            if not self.fast_backtest:
+                self.analyze(daily_stats)
         finally:
             self.data_portal = None
             self.metrics_tracker = None
@@ -851,16 +856,18 @@ class TradingAlgorithm(object):
         # TODO: the loop here could overwrite expected properties
         # of daily_perf. Could potentially raise or log a
         # warning.
-        for perf in perfs:
-            if 'daily_perf' in perf:
 
-                perf['daily_perf'].update(
-                    perf['daily_perf'].pop('recorded_vars')
-                )
-                perf['daily_perf'].update(perf['cumulative_risk_metrics'])
-                daily_perfs.append(perf['daily_perf'])
-            else:
-                self.risk_report = perf
+        if not self.fast_backtest:
+            for perf in perfs:
+                if 'daily_perf' in perf:
+
+                    perf['daily_perf'].update(
+                        perf['daily_perf'].pop('recorded_vars')
+                    )
+                    perf['daily_perf'].update(perf['cumulative_risk_metrics'])
+                    daily_perfs.append(perf['daily_perf'])
+                else:
+                    self.risk_report = perf
 
         daily_dts = pd.DatetimeIndex(
             [p['period_close'] for p in daily_perfs], tz='UTC'
