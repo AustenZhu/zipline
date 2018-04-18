@@ -106,6 +106,12 @@ def default_metrics():
         PeriodLabel(),
     }
 
+@register('faster')
+def small_metrics():
+    return {
+        Returns(),
+        ReturnsStatistic(lambda returns: empyrical.sortino_ratio(returns, period=MONTHLY), 'sortino'),
+    }
 
 @register('classic')
 @deprecated(
