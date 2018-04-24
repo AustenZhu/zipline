@@ -110,7 +110,7 @@ def default_metrics():
 def small_metrics():
     return {
         Returns(),
-        ReturnsStatistic(lambda returns: empyrical.sortino_ratio(returns, period=MONTHLY), 'sortino'),
+        ReturnsStatistic(lambda returns: empyrical.sortino_ratio(returns, period=MONTHLY), 'sortino monthly'),
     }
 
 @register('classic')
